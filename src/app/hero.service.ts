@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { ErrorHandler, Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import {Hero} from './hero';
 import {HEROES} from './mock-heroes';
@@ -17,12 +17,16 @@ export class HeroService {
     this.messageService.add(`HeroService: ${message}`);
   }
   private heroesUrl = 'api/heroes';  // URL to web api
+
   getHero(id: number): Observable<Hero> {
-    // For now, assume that a hero with the specified `id` always exists.
-    // Error handling will be added in the next step of the tutorial.
-    const hero = HEROES.find(h => h.id === id)!;
-    this.messageService.add(`HeroService: fetched hero id=${id}`);
-    return of(hero);
+    const url = `${this.heroesUrl}/${id}`
+    return this.http.get<Hero>(url).pipe(
+      tap(_ => this.log(`You have selected hero with ID: ${id}`)),
+      catchError(this.handleError<Hero>(`getHero id=${id}`))
+    )
+    // const hero = HEROES.find(h => h.id === id)!;
+    // this.messageService.add(`HeroService: fetched hero id=${id}`);
+    // return of(hero);
   }
   /**
  * Handle Http operation that failed.
@@ -46,9 +50,8 @@ private handleError<T>(operation = 'operation', result?: T) {
 }
 
 getHeroes(): Observable<Hero[]>{
-  // const heroes = of(HEROES);
-  // this.messageService.add("Hero Service: Fetched heroes");
   return this.http.get<Hero[]>(this.heroesUrl).pipe(
+    tap(_ => this.log('fetched heroes')),
     catchError(this.handleError<Hero[]>('getHeroes', []))
   );
 }
